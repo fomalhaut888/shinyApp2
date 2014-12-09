@@ -1,35 +1,59 @@
-library(RODBC)
+#Use ODBC
+#library(RODBC)
+#Use DBI
+library(DBI)
+library(RMySQL)
 library(ggplot2)
+library(plyr)
 shinyServer(function(input, output) {
   #datasetInput <- reactive({
     
   #})
   output$customer <- renderUI({
-    myconn <- odbcConnect("OpenDataDS")
-    sql2 <- "select distinct a.customer, b.name from DAILY_DATA a, CUSTOMER b where a.customer = b.id"
-    customer_data <- sqlQuery(myconn, sql2)
-    close(myconn)
+    sql2 <- "select distinct a.customer, b.name from daily_data a, customer b where a.customer = b.id"
+    #Use ODBC
+    #myconn <- odbcConnect("OpenDataDS")
+    #customer_data <- sqlQuery(myconn, sql2)
+    #close(myconn)
+    #Use DBI
+    driver <- dbDriver("MySQL")
+    myconn <- dbConnect(driver, host="127.0.0.1", port=3306, user="root", password="01517124", dbname="ADWORDSDB")
+    customer_data <- dbGetQuery(myconn, sql2)
+    dbDisconnect(myconn) 
     customer_list <- dlply(customer_data,.(name),function(f){ return (f$customer)})
     selectInput("customer", label = h4("Select customer"), choices=customer_list)
   })
   
   output$campaign <- renderUI({
-    myconn <- odbcConnect("OpenDataDS")
-    sql3 <- paste("select distinct campaign_name from DAILY_DATA a where a.customer = ",
+    sql3 <- paste("select distinct campaign_name from daily_data a where a.customer = ",
                   input$customer,sep="")
-    campaign_data <- sqlQuery(myconn, sql3)
-    close(myconn)
+    #Use ODBC
+    #myconn <- odbcConnect("OpenDataDS")
+    #campaign_data <- sqlQuery(myconn, sql3)
+    #close(myconn)
+    #Use DBI
+    driver <- dbDriver("MySQL")
+    myconn <- dbConnect(driver, host="127.0.0.1", port=3306, user="root", password="01517124", dbname="ADWORDSDB")
+    campaign_data <- dbGetQuery(myconn, sql3)
+    dbDisconnect(myconn)
     campaign_list <- dlply(campaign_data,.(campaign_name),function(f){ return (f$campaign_name)})
     selectInput("campaign", label = h4("Select campaign"), choices=campaign_list)
   })
   
   datasetInput <- reactive({
-    myconn <- odbcConnect("OpenDataDS")
-    sql1 <- paste("select data_date,",input$pointer," from DAILY_DATA where campaign_name='",
+    sql1 <- paste("select data_date,",input$pointer," from daily_data where campaign_name='",
                   input$campaign, "' order by data_date",
                   sep="")
-    daily_data <- sqlQuery(myconn, sql1)
-    close(myconn)
+    #Use ODBC
+    #myconn <- odbcConnect("OpenDataDS")
+    #daily_data <- sqlQuery(myconn, sql1)
+    #close(myconn)
+    #Use DBI
+    driver <- dbDriver("MySQL")
+    myconn <- dbConnect(driver, host="127.0.0.1", port=3306, user="root", password="01517124", dbname="ADWORDSDB")
+    daily_data <- dbGetQuery(myconn, sql1)
+    dbDisconnect(myconn)
+    daily_data$data_date <- as.POSIXct(daily_data$data_date)
     daily_data
   })
   
